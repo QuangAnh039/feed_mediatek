@@ -1,0 +1,44 @@
+#!/bin/sh /etc/rc.common
+
+START=10
+STOP=90
+
+partition_mount()
+{
+	mount_opts="rw,relatime"
+	target_fs="ext4"
+
+	[ -d "/lcm" ] || mkdir -p /lcm
+	lcm_data=`blkid  | grep lcm_data | cut -d':' -f1`
+	if [ -n "$lcm_data" ]; then
+		if ! mount -t $target_fs $lcm_data /lcm -o $mount_opts > /dev/null 2>&1; then
+			mkfs.$target_fs $lcm_data > /dev/null 2>&1
+			mount -t $target_fs $lcm_data /lcm -o $mount_opts
+		fi
+	fi
+}
+
+partition_umount()
+{
+	if mount | grep "/lcm" > /dev/null 2>&1; then
+		umount /lcm
+	fi
+}
+
+boot()
+{
+	case $(board_name) in
+	arcadyan,mozart)
+		partition_mount
+		;;
+	esac
+}
+
+shutdown()
+{
+	case $(board_name) in
+	arcadyan,mozart)
+		partition_umount
+		;;
+	esac
+}
